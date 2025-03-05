@@ -1,0 +1,15 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environment
+venv/
+.env
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore dataset files (optional)
+tmdb_movies_data.csv
