@@ -6,7 +6,7 @@ import os
 # Load and clean the movie dataset
 movies = pd.read_csv(os.path.join(os.path.dirname(__file__), "tmdb_movies_data.csv"))
 movies.rename(columns={'original_title': 'title', 'release_year': 'year', 'vote_average': 'rating'}, inplace=True)
-movies['overview'].fillna('', inplace=True)
+movies = movies.assign(overview=movies['overview'].fillna(''))
 movies.dropna(subset=['title', 'year', 'rating', 'genres'], inplace=True)
 
 def get_recommendations(genre, year_range):
@@ -43,7 +43,7 @@ def recommend_similar_movies(movie_title):
 
     # Convert movie descriptions into numerical feature vectors
     tfidf = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf.fit_transform(movies['overview'])
+    tfidf_matrix = tfidf.fit_transform(movies['overview']) # Looking at 'Overview' as the metric
 
     # Compute similarity scores between all movies
     similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)

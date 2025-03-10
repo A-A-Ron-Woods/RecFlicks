@@ -5,7 +5,7 @@ from tmdb_api import fetch_movie_data
 
 # Load movie dataset and extract unique genres
 movies_df = pd.read_csv("tmdb_movies_data.csv")
-genre_options = ["Any"] + sorted(set(g for genres in movies_df['genres'].dropna() for g in genres.split('|')))
+movie_titles = sorted(movies_df['original_title'].dropna().unique().tolist())  # Get unique titles
 
 def main():
     """Runs the Streamlit app for movie recommendations."""
@@ -16,6 +16,7 @@ def main():
 
     if recommendation_type == "Recommend by Genre & Year":
         # Sidebar filters for genre and release year
+        genre_options = ["Any"] + sorted(set(g for genres in movies_df['genres'].dropna() for g in genres.split('|')))
         st.sidebar.header("Filter Movies")
         genre = st.sidebar.selectbox("Choose Genre", genre_options)
         year_range = st.sidebar.slider("Release Year Range", 1980, 2025, (2000, 2015))
@@ -37,11 +38,12 @@ def main():
                         st.write("No additional info available.")
 
     elif recommendation_type == "Recommend Similar Movies":
-        # Input field for entering a movie title
-        movie_input = st.text_input("Enter a favorite movie to get similar recommendations")
-        
+        # Implement type-ahead search using selectbox
+        st.subheader("Find movies similar to:")
+        movie_input = st.selectbox("Start typing a movie name...", movie_titles, index=None, placeholder="Type here...")
+
         # Fetch and display similar movie recommendations
-        if st.button("Get Similar Movies") and movie_input:
+        if movie_input and st.button("Get Similar Movies"):
             similar_movies = recommend_similar_movies(movie_input)
             if similar_movies.empty:
                 st.warning("No similar movies found. Try another title.")
