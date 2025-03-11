@@ -3,6 +3,24 @@ import pandas as pd
 from recommendation import get_recommendations, recommend_similar_movies
 from tmdb_api import fetch_movie_data
 
+st.markdown(
+    """
+    <style>
+    /* Import Jolly Lodger font from Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Jolly+Lodger&display=swap');
+
+    /* Set title to use Jolly Lodger */
+    h1 {
+        font-family: 'Jolly Lodger', cursive !important;
+        font-size: 80px !important;  /* Adjust title size */
+        text-align: center !important; /* Center title */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
 # Load movie dataset and extract unique genres
 movies_df = pd.read_csv("tmdb_movies_data.csv")
 movie_titles = sorted(movies_df['original_title'].dropna().unique().tolist())  # Get unique titles
