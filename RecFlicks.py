@@ -20,7 +20,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # Load movie dataset and extract unique genres
 movies_df = pd.read_csv("tmdb_movies_data.csv")
 movie_titles = sorted(movies_df['original_title'].dropna().unique().tolist())  # Get unique titles
@@ -47,8 +46,8 @@ def main():
             else:
                 st.subheader("Recommended Movies:")
                 for _, row in recommendations.iterrows():
-                    movie_details = fetch_movie_data(row['title'])
-                    st.subheader(f"{row['title']} ({row['year']})")
+                    movie_details = fetch_movie_data(row['original_title'])
+                    st.subheader(f"{row['original_title']} ({row['release_year']})")
                     if movie_details:
                         st.image(movie_details['poster'], width=200)
                         st.write(movie_details['overview'])
@@ -68,13 +67,16 @@ def main():
             else:
                 st.subheader(f"Movies similar to: {movie_input}")
                 for _, row in similar_movies.iterrows():
-                    movie_details = fetch_movie_data(row['title'])
-                    st.subheader(f"{row['title']} ({row['year']})")
+                    movie_details = fetch_movie_data(row['original_title'])
+                    st.subheader(f"{row['original_title']} ({row['release_year']})")
                     if movie_details:
                         st.image(movie_details['poster'], width=200)
                         st.write(movie_details['overview'])
                     else:
                         st.write("No additional info available.")
+                    
+                    # Display reason for recommendation
+                    st.write(f"**Reason for recommendation:** {row['reason_for_recommendation']}")
 
 if __name__ == "__main__":
     main()
