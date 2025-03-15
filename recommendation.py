@@ -30,6 +30,9 @@ def get_recommendations(genre, year_range):
     if genre != "Any":
         filtered_movies = filtered_movies[filtered_movies['genres'].apply(lambda x: genre in x)]
     
+    if 'weighted_rating' not in filtered_movies.columns:
+        filtered_movies['weighted_rating'] = 0
+    
     return filtered_movies.sort_values(by='weighted_rating', ascending=False).head(10)
 
 def recommend_similar_movies(movie_title):

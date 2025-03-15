@@ -3,80 +3,165 @@ import pandas as pd
 from recommendation import get_recommendations, recommend_similar_movies
 from tmdb_api import fetch_movie_data
 
+# Initialize session state for navigation & recommendations
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = "home"
+if "last_page" not in st.session_state:
+    st.session_state["last_page"] = "home"
+if "recommendations" not in st.session_state:
+    st.session_state["recommendations"] = []
+if "carousel_index" not in st.session_state:
+    st.session_state["carousel_index"] = 0
+if "recommend_triggered" not in st.session_state:
+    st.session_state["recommend_triggered"] = False
+if "selected_input" not in st.session_state:
+    st.session_state["selected_input"] = ""  # Stores selected genre or movie
+if "selected_years" not in st.session_state:
+    st.session_state["selected_years"] = ""  # Stores selected year range
+
+# Load movie dataset
+movies_df = pd.read_csv("tmdb_movies_data.csv")
+movie_titles = sorted(movies_df['original_title'].dropna().unique().tolist())
+
+# Custom CSS to fix title size and remove hover link icons
 st.markdown(
     """
     <style>
-    /* Import Jolly Lodger font from Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Jolly+Lodger&display=swap');
 
-    /* Set title to use Jolly Lodger */
-    h1 {
-        font-family: 'Jolly Lodger', cursive !important;
-        font-size: 80px !important;  /* Adjust title size */
-        text-align: center !important; /* Center title */
+    /* Apply font to all titles */
+    h1 { 
+        font-family: 'Jolly Lodger', cursive !important; 
+        font-size: 80px !important;  /* Large font size */
+        text-align: center !important; 
     }
+
+    /* Reduce size of explanation text */
+    .custom-text { 
+        font-family: 'Jolly Lodger', cursive !important; 
+        font-size: 30px !important;  /* Smaller than title */
+        text-align: center !important; 
+    }
+
+    /* Remove Streamlit's automatic hover link icons */
+    header a, h1 a, h2 a, h3 a, h4 a {
+        text-decoration: none !important;
+        pointer-events: none !important;
+        display: none !important;
+    }
+
+    /* Ensure no underline or hover effects */
+    a:hover, button:hover { text-decoration: none !important; }
+    .stButton>button { border-radius: 8px !important; }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Load movie dataset and extract unique genres
-movies_df = pd.read_csv("tmdb_movies_data.csv")
-movie_titles = sorted(movies_df['original_title'].dropna().unique().tolist())  # Get unique titles
+def navigate_to(page):
+    """Changes session state to navigate between pages immediately."""
+    st.session_state["last_page"] = st.session_state["current_page"]
+    st.session_state["current_page"] = page
+    st.session_state["recommend_triggered"] = False  # Reset recommendation trigger
 
 def main():
-    """Runs the Streamlit app for movie recommendations."""
-    st.title("RecFlicks")
+    """Runs the Streamlit app with navigation and layout."""
     
-    # Select recommendation method
-    recommendation_type = st.radio("Choose a recommendation type:", ("Recommend by Genre & Year", "Recommend Similar Movies"))
+    # Home Page
+    if st.session_state["current_page"] == "home":
+        st.title("RecFlicks 🎬")
+        st.write("Choose how you'd like to get movie recommendations.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("🔍 Recommend by Genre & Year", on_click=lambda: navigate_to("recommend_genre"))
+        with col2:
+            st.button("🎥 Recommend by Similar Movie", on_click=lambda: navigate_to("recommend_similar"))
 
-    if recommendation_type == "Recommend by Genre & Year":
-        # Sidebar filters for genre and release year
+    # Recommend by Genre & Year Page
+    elif st.session_state["current_page"] == "recommend_genre":
+        col1, col2 = st.columns([1, 5])
+        with col1:
+            st.button("🏠 Home", on_click=lambda: navigate_to("home"))
+        with col2:
+            st.button("🔙 Back", on_click=lambda: navigate_to("home"))
+
+        st.title("🎭 Pick a Genre & Year Range")
         genre_options = ["Any"] + sorted(set(g for genres in movies_df['genres'].dropna() for g in genres.split('|')))
-        st.sidebar.header("Filter Movies")
-        genre = st.sidebar.selectbox("Choose Genre", genre_options)
-        year_range = st.sidebar.slider("Release Year Range", 1980, 2025, (2000, 2015))
+        genre = st.selectbox("Choose Genre", genre_options)
+        year_range = st.slider("Release Year Range", 1980, 2025, (2000, 2015))
 
-        # Fetch and display movie recommendations
-        if st.button("Get Recommendations"):
-            recommendations = get_recommendations(genre, year_range)
-            if recommendations.empty:
-                st.warning("No recommendations found. Try different filters.")
-            else:
-                st.subheader("Recommended Movies:")
-                for _, row in recommendations.iterrows():
-                    movie_details = fetch_movie_data(row['original_title'])
-                    st.subheader(f"{row['original_title']} ({row['release_year']})")
-                    if movie_details:
-                        st.image(movie_details['poster'], width=200)
-                        st.write(movie_details['overview'])
-                    else:
-                        st.write("No additional info available.")
+        if st.button("Get Recommendations") and not st.session_state["recommend_triggered"]:
+            st.session_state["recommend_triggered"] = True
+            st.session_state["recommendations"] = get_recommendations(genre, year_range).to_dict(orient="records")
+            st.session_state["carousel_index"] = 0
+            st.session_state["selected_input"] = f"{genre} genre" if genre != "Any" else "various genres"
+            st.session_state["selected_years"] = f"{year_range[0]} - {year_range[1]}"
+            navigate_to("results")
+            st.rerun()
 
-    elif recommendation_type == "Recommend Similar Movies":
-        # Implement type-ahead search using selectbox
-        st.subheader("Find movies similar to:")
+    # Recommend by Similar Movie Page
+    elif st.session_state["current_page"] == "recommend_similar":
+        col1, col2 = st.columns([1, 5])
+        with col1:
+            st.button("🏠 Home", on_click=lambda: navigate_to("home"))
+        with col2:
+            st.button("🔙 Back", on_click=lambda: navigate_to("home"))
+
+        st.title("🔍 Find Similar Movies")
         movie_input = st.selectbox("Start typing a movie name...", movie_titles, index=None, placeholder="Type here...")
 
-        # Fetch and display similar movie recommendations
-        if movie_input and st.button("Get Similar Movies"):
-            similar_movies = recommend_similar_movies(movie_input)
-            if similar_movies.empty:
-                st.warning("No similar movies found. Try another title.")
-            else:
-                st.subheader(f"Movies similar to: {movie_input}")
-                for _, row in similar_movies.iterrows():
-                    movie_details = fetch_movie_data(row['original_title'])
-                    st.subheader(f"{row['original_title']} ({row['release_year']})")
-                    if movie_details:
-                        st.image(movie_details['poster'], width=200)
-                        st.write(movie_details['overview'])
-                    else:
-                        st.write("No additional info available.")
-                    
-                    # Display reason for recommendation
-                    st.write(f"**Reason for recommendation:** {row['reason_for_recommendation']}")
+        if movie_input and st.button("Get Recommendations") and not st.session_state["recommend_triggered"]:
+            st.session_state["recommend_triggered"] = True
+            st.session_state["recommendations"] = recommend_similar_movies(movie_input).to_dict(orient="records")
+            st.session_state["carousel_index"] = 0
+            st.session_state["selected_input"] = movie_input
+            st.session_state["selected_years"] = ""
+            navigate_to("results")
+            st.rerun()
+
+    # Results Page with Carousel
+    elif st.session_state["current_page"] == "results":
+        col1, col2 = st.columns([1, 5])
+        with col1:
+            st.button("🏠 Home", on_click=lambda: navigate_to("home"))
+        with col2:
+            st.button("🔙 Back", on_click=lambda: navigate_to(st.session_state["last_page"]))
+
+        st.title("🎞️ Recommended Movies")
+
+        if not st.session_state["recommendations"]:
+            st.warning("No recommendations available. Please go back and try again.")
+            return
+
+        # Show explanation text above carousel
+        if st.session_state["selected_years"]:
+            st.markdown(f'<p class="custom-text"> Here\'s a list of movies in the {st.session_state["selected_input"]}, from the years {st.session_state["selected_years"]}.</p>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<p class="custom-text"> Here\'s a list of movies similar to {st.session_state["selected_input"]}.</p>', unsafe_allow_html=True)
+
+        # Restore the carousel
+        current_index = st.session_state["carousel_index"]
+        movie = st.session_state["recommendations"][current_index]
+
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col1:
+            st.button("⬅️ Previous", disabled=(current_index == 0), on_click=lambda: st.session_state.update(carousel_index=max(0, current_index - 1)))
+        with col2:
+            st.write(f"    **{current_index + 1} / {len(st.session_state['recommendations'])}**")
+        with col3:
+            st.button("➡️ Next", disabled=(current_index == len(st.session_state["recommendations"]) - 1), on_click=lambda: st.session_state.update(carousel_index=min(len(st.session_state["recommendations"]) - 1, current_index + 1)))
+
+        st.subheader(f" {movie['original_title']} ({movie['release_year']})")
+        movie_details = fetch_movie_data(movie['original_title'])
+
+        if movie_details:
+            st.image(movie_details['poster'], width=200)
+            st.write(movie_details['overview'])
+
+        # Display reason for recommendation (if available)
+        if "reason_for_recommendation" in movie and movie["reason_for_recommendation"]:
+            st.write(f"**Reason for Recommendation:** {movie['reason_for_recommendation']}")
 
 if __name__ == "__main__":
     main()
