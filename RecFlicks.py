@@ -23,7 +23,7 @@ if "selected_years" not in st.session_state:
 movies_df = pd.read_csv("tmdb_movies_data.csv")
 movie_titles = sorted(movies_df['original_title'].dropna().unique().tolist())
 
-# Custom CSS to fix title size and remove hover link icons
+# Custom CSS - changing Font style, size, removing visual clutter
 st.markdown(
     """
     <style>

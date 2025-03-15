@@ -59,7 +59,7 @@ def recommend_similar_movies(movie_title):
     similarity_scores = list(enumerate(similarity_matrix[movie_idx]))
     similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
     
-    # Select top similar movies
+    # Select 10 top similar movies (Excludes movie itself)
     similar_movie_indices = [i[0] for i in similarity_scores[1:11] if i[0] < len(filtered_movies)]
     recommended_movies = filtered_movies.iloc[similar_movie_indices].reset_index(drop=True)
     
