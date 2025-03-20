@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.decomposition import TruncatedSVD
 import os
 
 # Load and clean the dataset
@@ -35,9 +36,15 @@ def get_recommendations(genre, year_range):
     
     return filtered_movies.sort_values(by='weighted_rating', ascending=False).head(10)
 
-def recommend_similar_movies(movie_title):
+def jaccard_similarity(set1, set2):
+    """Compute Jaccard similarity between two sets."""
+    if not set1 or not set2:
+        return 0
+    return len(set1 & set2) / len(set1 | set2)
+
+def recommend_similar_movies(movie_title, tfidf_weight=0.7, cast_weight=0.3):
     """
-    Finds movies similar to a given title based on genre, keywords, and overview similarity.
+    Finds movies similar to a given title using SVD on TF-IDF vectors and cast similarity.
     """
     if movie_title not in movies['original_title'].values:
         return pd.DataFrame(columns=['original_title', 'release_year', 'vote_average', 'vote_count', 'overview', 'reason_for_recommendation'])
@@ -53,14 +60,39 @@ def recommend_similar_movies(movie_title):
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(filtered_movies['overview'] + filtered_movies['keywords'].apply(lambda x: ' '.join(x)))
     
-    # Compute similarity
-    similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    # Apply Truncated SVD to reduce dimensions
+    svd = TruncatedSVD(n_components=100)  # Experiment with different values
+    reduced_matrix = svd.fit_transform(tfidf_matrix)
+    
+    # Compute TF-IDF similarity in reduced space
+    similarity_matrix = cosine_similarity(reduced_matrix, reduced_matrix)
+    
+    # Find movie index in filtered dataset
     movie_idx = filtered_movies[filtered_movies['original_title'] == movie_title].index[0]
     similarity_scores = list(enumerate(similarity_matrix[movie_idx]))
-    similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
     
-    # Select 10 top similar movies (Excludes movie itself)
-    similar_movie_indices = [i[0] for i in similarity_scores[1:11] if i[0] < len(filtered_movies)]
+    # Compute cast similarity for all filtered movies
+    target_cast = set(target_movie['cast']) if isinstance(target_movie['cast'], list) else set()
+    cast_similarities = []
+    
+    for idx, rec_movie in filtered_movies.iterrows():
+        rec_cast = set(rec_movie['cast']) if isinstance(rec_movie['cast'], list) else set()
+        cast_similarities.append((idx, jaccard_similarity(target_cast, rec_cast)))
+    
+    # Normalize cast similarities to the same scale as cosine similarity
+    max_cast_sim = max([sim[1] for sim in cast_similarities]) if cast_similarities else 1
+    cast_similarities = [(idx, sim / max_cast_sim) for idx, sim in cast_similarities]
+
+    # Merge TF-IDF and cast similarities into a final score
+    cast_sim_dict = dict(cast_similarities)
+    final_scores = [(idx, tfidf_weight * tfidf_sim + cast_weight * cast_sim_dict.get(idx, 0)) 
+                    for idx, tfidf_sim in similarity_scores]
+    
+    # Sort by final similarity score
+    final_scores = sorted(final_scores, key=lambda x: x[1], reverse=True)
+    
+    # Select top 10 similar movies (Excludes movie itself)
+    similar_movie_indices = [i[0] for i in final_scores[1:11] if i[0] < len(filtered_movies)]
     recommended_movies = filtered_movies.iloc[similar_movie_indices].reset_index(drop=True)
     
     # Generate reason for recommendation
@@ -68,13 +100,10 @@ def recommend_similar_movies(movie_title):
     for _, rec_movie in recommended_movies.iterrows():
         shared_features = []
         
-        # Ensure lists are properly formatted
         rec_keywords = set(rec_movie['keywords']) if isinstance(rec_movie['keywords'], list) else set()
         rec_cast = set(rec_movie['cast']) if isinstance(rec_movie['cast'], list) else set()
         target_keywords = set(target_movie['keywords']) if isinstance(target_movie['keywords'], list) else set()
-        target_cast = set(target_movie['cast']) if isinstance(target_movie['cast'], list) else set()
         
-        # Compare shared features
         shared_keywords = target_keywords & rec_keywords
         shared_cast = target_cast & rec_cast
         
