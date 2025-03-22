@@ -70,6 +70,12 @@ def main():
     # Home Page
     if st.session_state["current_page"] == "home":
         st.title("RecFlicks 🎬")
+
+        st.markdown(
+            '<p class="custom-text">Welcome to RecFlicks – your movie recommendation buddy! 🎉 Whether you know what kind of movie you like or want something similar to a favorite, we’ve got your next watch covered.</p>',
+            unsafe_allow_html=True
+        )
+        
         st.write("Choose how you'd like to get movie recommendations.")
         
         col1, col2 = st.columns(2)
@@ -140,7 +146,7 @@ def main():
         else:
             st.markdown(f'<p class="custom-text"> Here\'s a list of movies similar to {st.session_state["selected_input"]}.</p>', unsafe_allow_html=True)
 
-        # Restore the carousel
+        # Recommendation carousel
         current_index = st.session_state["carousel_index"]
         movie = st.session_state["recommendations"][current_index]
 
@@ -153,11 +159,27 @@ def main():
             st.button("➡️ Next", disabled=(current_index == len(st.session_state["recommendations"]) - 1), on_click=lambda: st.session_state.update(carousel_index=min(len(st.session_state["recommendations"]) - 1, current_index + 1)))
 
         st.subheader(f" {movie['original_title']} ({movie['release_year']})")
-        movie_details = fetch_movie_data(movie['original_title'])
+        
+        movie_details = fetch_movie_data(
+            movie['original_title'],
+            movie.get('release_year'),
+            movie.get('overview')  # Fallback to local overview
+        )
+        
+        col_img, col_info = st.columns([1, 2])
 
-        if movie_details:
-            st.image(movie_details['poster'], width=200)
-            st.write(movie_details['overview'])
+        with col_img:
+            if movie_details and movie_details['poster']:
+                st.image(movie_details['poster'], width=200)
+            else:
+                st.write("No poster available.")
+
+        with col_info:
+            if movie_details and movie_details['overview']:
+                st.write(movie_details['overview'])
+
+            st.markdown(f"**⭐ Average Rating:** {movie.get('vote_average', 'N/A')}")
+            st.markdown(f"**🗳️ Vote Count:** {movie.get('vote_count', 'N/A')}")
 
         # Display reason for recommendation (if available)
         if "reason_for_recommendation" in movie and movie["reason_for_recommendation"]:
