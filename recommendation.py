@@ -61,7 +61,7 @@ def recommend_similar_movies(movie_title, tfidf_weight=0.7, cast_weight=0.3):
     tfidf_matrix = tfidf.fit_transform(filtered_movies['overview'] + filtered_movies['keywords'].apply(lambda x: ' '.join(x)))
     
     # Apply Truncated SVD to reduce dimensions
-    svd = TruncatedSVD(n_components=100)  # Experiment with different values
+    svd = TruncatedSVD(n_components=100) # n_components can be tuned
     reduced_matrix = svd.fit_transform(tfidf_matrix)
     
     # Compute TF-IDF similarity in reduced space

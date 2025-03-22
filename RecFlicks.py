@@ -15,9 +15,9 @@ if "carousel_index" not in st.session_state:
 if "recommend_triggered" not in st.session_state:
     st.session_state["recommend_triggered"] = False
 if "selected_input" not in st.session_state:
-    st.session_state["selected_input"] = ""  # Stores selected genre or movie
+    st.session_state["selected_input"] = "" 
 if "selected_years" not in st.session_state:
-    st.session_state["selected_years"] = ""  # Stores selected year range
+    st.session_state["selected_years"] = ""
 
 # Load movie dataset
 movies_df = pd.read_csv("tmdb_movies_data.csv")
@@ -59,20 +59,25 @@ st.markdown(
 )
 
 def navigate_to(page):
-    """Changes session state to navigate between pages immediately."""
+    """
+    Update session state to move between pages of the app.
+    Resets the recommendation trigger each time navigation occurs.
+    """
     st.session_state["last_page"] = st.session_state["current_page"]
     st.session_state["current_page"] = page
-    st.session_state["recommend_triggered"] = False  # Reset recommendation trigger
+    st.session_state["recommend_triggered"] = False
 
+# Main function
 def main():
-    """Runs the Streamlit app with navigation and layout."""
     
-    # Home Page
+    #--------------- Home Page
     if st.session_state["current_page"] == "home":
         st.title("RecFlicks 🎬")
 
         st.markdown(
-            '<p class="custom-text">Welcome to RecFlicks – your movie recommendation buddy! 🎉 Whether you know what kind of movie you like or want something similar to a favorite, we’ve got your next watch covered.</p>',
+            '<p class="custom-text">Welcome to RecFlicks – your movie recommendation buddy! '
+            'Whether you know what kind of movie you like or want something similar to a favorite, '
+            'we’ve got your next watch covered. *Uses TMDb dataset/API*</p>',
             unsafe_allow_html=True
         )
         
@@ -84,7 +89,7 @@ def main():
         with col2:
             st.button("🎥 Recommend by Similar Movie", on_click=lambda: navigate_to("recommend_similar"))
 
-    # Recommend by Genre & Year Page
+    # -----------------------Recommend by Genre & Year Page
     elif st.session_state["current_page"] == "recommend_genre":
         col1, col2 = st.columns([1, 5])
         with col1:
@@ -106,7 +111,7 @@ def main():
             navigate_to("results")
             st.rerun()
 
-    # Recommend by Similar Movie Page
+    # ------------------------------Recommend by Similar Movie Page
     elif st.session_state["current_page"] == "recommend_similar":
         col1, col2 = st.columns([1, 5])
         with col1:
@@ -126,7 +131,7 @@ def main():
             navigate_to("results")
             st.rerun()
 
-    # Results Page with Carousel
+    # ------------------------------Results Page
     elif st.session_state["current_page"] == "results":
         col1, col2 = st.columns([1, 5])
         with col1:
@@ -136,17 +141,18 @@ def main():
 
         st.title("🎞️ Recommended Movies")
 
+        # Safety check
         if not st.session_state["recommendations"]:
             st.warning("No recommendations available. Please go back and try again.")
             return
 
-        # Show explanation text above carousel
+        # Context text above results
         if st.session_state["selected_years"]:
             st.markdown(f'<p class="custom-text"> Here\'s a list of movies in the {st.session_state["selected_input"]}, from the years {st.session_state["selected_years"]}.</p>', unsafe_allow_html=True)
         else:
             st.markdown(f'<p class="custom-text"> Here\'s a list of movies similar to {st.session_state["selected_input"]}.</p>', unsafe_allow_html=True)
 
-        # Recommendation carousel
+        # Recommendation results display controls
         current_index = st.session_state["carousel_index"]
         movie = st.session_state["recommendations"][current_index]
 
@@ -158,12 +164,12 @@ def main():
         with col3:
             st.button("➡️ Next", disabled=(current_index == len(st.session_state["recommendations"]) - 1), on_click=lambda: st.session_state.update(carousel_index=min(len(st.session_state["recommendations"]) - 1, current_index + 1)))
 
+        # Display movie details
         st.subheader(f" {movie['original_title']} ({movie['release_year']})")
-        
         movie_details = fetch_movie_data(
             movie['original_title'],
             movie.get('release_year'),
-            movie.get('overview')  # Fallback to local overview
+            movie.get('overview')  # Fallback to local overview (if no API data)
         )
         
         col_img, col_info = st.columns([1, 2])
