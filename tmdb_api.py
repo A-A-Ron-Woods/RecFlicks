@@ -1,11 +1,9 @@
 import requests
-import os
-from dotenv import load_dotenv
 import random
+import streamlit as st
 
-# Load API key from environment variables
-load_dotenv()
-API_KEY = os.getenv("IMDB_API_KEY")
+# Load API from config.toml file
+API_KEY = st.secrets["api"]["tmdb_key"]
 
 def fetch_movie_data(title, release_year=None, local_overview=None):
     """

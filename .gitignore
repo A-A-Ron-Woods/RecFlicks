@@ -1,15 +1,27 @@
-# Ignore Python cache files
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.so
 
-# Ignore virtual environment
+# Virtual environment folders
+.venv/
 venv/
+env/
+
+# Environment variable files (no longer used, but good to ignore anyway)
 .env
 
-# Ignore system files
+# Jupyter Notebook checkpoints (just in case)
+.ipynb_checkpoints/
+
+# macOS
 .DS_Store
+
+# Windows
 Thumbs.db
 
-# Ignore dataset files (optional)
-tmdb_movies_data.csv
+# VS Code settings
+.vscode/
+
+# Streamlit secrets file
+.streamlit/secrets.toml
