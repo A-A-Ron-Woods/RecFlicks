@@ -28,6 +28,7 @@ def fetch_movie_data(title, release_year=None, local_overview=None):
     params = {
         "api_key": API_KEY,
         "query": title,
+        "include_adult": "false",
     }
     if release_year:
         params["year"] = release_year
@@ -75,6 +76,7 @@ def fetch_random_movie_by_year(year):
         "api_key": API_KEY,
         "primary_release_year": year,
         "sort_by": "popularity.desc",
+        "include_adult": "false",
         "page": random.randint(1, 5)  # Randomize the page to get variation
     }
 
