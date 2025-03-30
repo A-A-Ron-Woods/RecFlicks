@@ -225,7 +225,7 @@ def main():
                     unsafe_allow_html=True
                 )
                 st.markdown(
-                    "<div style='text-align: center;'>Use the ⬅️ and ➡️ to cycle recommendations</div>",
+                    "<div style='text-align: center;'>Use the ⬅️Previous and ➡️Next buttons to cycle recommendations</div>",
                     unsafe_allow_html=True
                 )
             with col3:
@@ -258,6 +258,11 @@ def main():
                     st.markdown(f"[🎥 Watch Trailer]({movie_details['trailer']})", unsafe_allow_html=True)
                 else:
                     st.write("🎥 No trailer available.")
+                
+                if movie_details and movie_details['reviews_link']:
+                    st.markdown(f"[📝 Read Reviews]({movie_details['reviews_link']})", unsafe_allow_html=True)
+                else:
+                    st.write("📝 No reviews available.")
 
             # Display reason for recommendation (if available)
             if "reason_for_recommendation" in movie and movie["reason_for_recommendation"]:

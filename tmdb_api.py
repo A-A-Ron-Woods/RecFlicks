@@ -15,7 +15,8 @@ def fetch_movie_data(title, release_year=None, local_overview=None):
         return {
             "poster": None,
             "overview": local_overview or "No description available.",
-            "trailer": None
+            "trailer": None,
+            "reviews_link": None
         }
 
     params = {
@@ -44,12 +45,17 @@ def fetch_movie_data(title, release_year=None, local_overview=None):
             poster_url = f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}" if movie.get('poster_path') else None
             overview_text = movie.get('overview', '').strip()
 
+            # Fetch movie trailer
             trailer_url = fetch_movie_trailer(movie_id)
+
+            #Create link to movie reviews
+            reviews_link = f"https://www.themoviedb.org/movie/{movie_id}/reviews"
 
             return {
                 "poster": poster_url,
                 "overview": overview_text if overview_text else (local_overview or "No description available."),
-                "trailer": trailer_url
+                "trailer": trailer_url,
+                "reviews_link": reviews_link
             }
 
     except requests.exceptions.RequestException as e:
@@ -58,7 +64,8 @@ def fetch_movie_data(title, release_year=None, local_overview=None):
     return {
         "poster": None,
         "overview": local_overview or "No description available.",
-        "trailer": None
+        "trailer": None,
+        "reviews_link": None
     }
 
 def fetch_movie_trailer(movie_id):
