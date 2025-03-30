@@ -254,6 +254,11 @@ def main():
                 st.markdown(f"**⭐ Average TMDb Rating:** {movie.get('vote_average', 'N/A')}")
                 st.markdown(f"**🗳️ TMDb Vote Count:** {movie.get('vote_count', 'N/A')}")
 
+                if movie_details and movie_details['trailer']:
+                    st.markdown(f"[🎥 Watch Trailer]({movie_details['trailer']})", unsafe_allow_html=True)
+                else:
+                    st.write("🎥 No trailer available.")
+
             # Display reason for recommendation (if available)
             if "reason_for_recommendation" in movie and movie["reason_for_recommendation"]:
                 st.write(f"**Reason for Recommendation:** {movie['reason_for_recommendation']}")
