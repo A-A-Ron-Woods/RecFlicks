@@ -93,6 +93,7 @@ def fetch_movie_trailer(movie_id):
 def fetch_random_movie_by_year(year):
     """
     Fetch a random movie's poster and title from TMDb for a specific year.
+    Looks at top 20 most popular movies from that year.
     """
     if not API_KEY:
         return {"title": None, "poster": None}
@@ -103,7 +104,8 @@ def fetch_random_movie_by_year(year):
         "primary_release_year": year,
         "sort_by": "popularity.desc",
         "include_adult": "false",
-        "page": random.randint(1, 5)  # Randomize the page to get variation
+        "vote_count.gte": 50,
+        "page": 1
     }
 
     try:
@@ -112,7 +114,7 @@ def fetch_random_movie_by_year(year):
         results = response.json().get("results", [])
 
         if results:
-            movie = random.choice(results)
+            movie = random.choice(results[:20])
             poster_url = f"https://image.tmdb.org/t/p/w500{movie.get('poster_path')}" if movie.get('poster_path') else None
             return {
                 "title": movie.get('title', 'Unknown'),
